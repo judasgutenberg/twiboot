@@ -21,7 +21,7 @@
  +    The necessary connection required to do the master-coordinated       +
  +    reflash is the I2C signals and ground.  State is passed to the       +
  +    bootloader through a byte set at 510 (decimal) in the AVR's EEPROM   +
- +     Contains serial functionality that helped me debug it.              +
+ +    Contains serial functionality that helped me debug it.               +
  +                                                                         +
  +                                                                         +
  +                                                                         +
@@ -42,13 +42,8 @@
 #include <stdlib.h>
 #include <util/twi.h>
  
- 
-//gus-specific
 #define LED_PIN PB5
-//debug
-
  
-
 
 #ifndef BOOTLOADER_START
 #define BOOTLOADER_START 0x7000
@@ -231,8 +226,6 @@ static uint8_t rstvect_save[2];
 static uint8_t appvect_save[2];
 #endif /* (VIRTUAL_BOOT_SECTION) */
 
-
-
 //for Gus's no-reset I2C bootloader:
 #define BOOT_MAGIC_ADDR ((uint16_t*)510)
 #define BOOT_MAGIC_VALUE 0xB007
@@ -246,10 +239,8 @@ static uint16_t page_dirty_bytes = 0; // NEW: number of bytes buffered in curren
 static uint16_t current_page_word;
 volatile uint8_t flash_write_pending = 0;
 
-
 /////////////////////////////////////////////////////////////
-//debug bitbanger functions
-
+//debug bitbanger functions. the plan was to use this when serial was unreliable
 
 #define TX_CLOCK_PIN 1  // A0 -> PC0
 #define TX_DATA_PIN  0  // A1 -> PC1
@@ -276,9 +267,8 @@ void tx_byte(uint8_t b) {
  
 }
 
-
 /////////////////////////////////////////////////////////////
-//debug serial:
+//debug serial, because i eventually got serial to work
 
 // initialize UART
 static void uart_init(void)
@@ -287,13 +277,10 @@ static void uart_init(void)
     // UBRR = 16,000,000 / (8 * 115200) - 1 ˜ 16
     UBRR0H = (16 >> 8) & 0xFF;
     UBRR0L = 16 & 0xFF;
-
     // Enable double speed
     UCSR0A |= (1 << U2X0);
-
     // Enable transmitter only
     UCSR0B = (1 << TXEN0);
-
     // 8N1 frame format
     UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
 }
@@ -307,15 +294,12 @@ static void uart_putc(char c)
     UDR0 = c;
 }
 
- 
-
 static void uart_puts(const char *s)
 {
     while (*s) {
         uart_putc(*s++);
     }
 }
-
 
 void uart_putint(uint32_t value)
 {
@@ -324,14 +308,12 @@ void uart_putint(uint32_t value)
     uart_puts(buf);
 }
  
-
 void uart_puthex(int value)
 {
     char buf[8];              // enough for -32768\0
     itoa(value, buf, 16);
     uart_puts(buf);
 }
-
 
 static inline char hex_digit(uint8_t v)
 {
@@ -359,7 +341,6 @@ void uart_put_bytes_hex(const uint8_t *data, size_t len)
     //uart_putc('\n');                  // optional newline at end
 }
 
- 
 void uart_dump_buf(void)
 {
     for (uint16_t i = 0; i < 128; i += 16) {
@@ -373,8 +354,9 @@ void uart_dump_buf(void)
         // print up to 16 bytes
         for (uint8_t j = 0; j < 16; j++) {
             uint16_t idx = i + j;
-            if (idx >= 128) break;
-
+            if (idx >= 128) {
+              break;
+            }
             uint8_t b = buf[idx];
             uart_putc(hex_digit(b >> 4));
             uart_putc(hex_digit(b));
@@ -385,8 +367,7 @@ void uart_dump_buf(void)
     }
 }
 /////////////////////////////////////////////////////////////////////////////
-//hardware debugging
-
+//hardware debugging, for the stage when i was just using LEDs to debug
 
 void setArduinoPin(uint8_t pin, uint8_t value)
 {
@@ -414,7 +395,6 @@ void setArduinoPin(uint8_t pin, uint8_t value)
 
 //////////////////////////////////////////////////////////////////////////////////
 //new interrupt stuff we were missing
-
 
 void TWI_SlaveInit(void) {
     TWAR = (TWI_ADDRESS << 1);   // set 7-bit address
