@@ -13,7 +13,9 @@ state from the sketch to the bootloader so that the master can then send the new
 
 The files slaveupdate.cpp and slaveupdate.h contain a library of functions to run on an ESP8266 master, which will allow that master to stream a hex image file from a web server to the slave while this bootloader is running on it.  The original twiboot didn't have built-in support for chunked data (that is, data in packets significantly smaller than the 128 byte page limit of an Atmega328p).  Such chunking is essential if one is using most Arduino I2C libraries, which impose a 32 byte limit on I2C transfers.
 
-For now this version is bulky and requires a 4k bootloader partition in the flash. But some day soon I will slim it down and get rid of all the uart and other debugging code.
+For now this version is bulky and requires at least a 2k bootloader partition in the flash. If you set UART_DEBUG to 1, you will require a 4k boot partition.
+
+I have only tested this new version on Atmega328ps and am skeptical that AVRs with I2C emulated by bit-banging will work, though apparently the original twiboot supported that.
 
 ## Devices Supported ##
 Currently the following AVR MCUs are supported:
