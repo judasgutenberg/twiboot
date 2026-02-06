@@ -43,7 +43,6 @@
 #include <util/twi.h>
  
 #define LED_PIN PB5
- 
 
 #ifndef BOOTLOADER_START
 #define BOOTLOADER_START 0x7000
@@ -53,11 +52,9 @@
 #define UART_DEBUG 0
 #endif
 
-
 #ifndef CLOCKED_SERIAL_DEBUG
 #define CLOCKED_SERIAL_DEBUG 0
 #endif
-
 
 #define VERSION_STRING          "TWIBOOT v3.3 NR"
 #define EEPROM_SUPPORT          0
