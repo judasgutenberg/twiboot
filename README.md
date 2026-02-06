@@ -11,7 +11,7 @@ This version only requires an I2C connection to a master to reflash the sketch a
 
 Support is provided in my <a href=https://github.com/judasgutenberg/Arduino_I2C_Slave_With_Commands  target=Arduino>Arduino Slave With Commands sketch</a> to jump into this bootloader directly so that the master can then send the data necessary to reflash it.
 This code uses two bytes beginning at EEPROM address 510 (decimal) to pass a "stay in bootloader"
-state from the sketch to the bootloader so that the master can then send the new flash image.  When that is finished, the slave will boot back into the sketch if it can be run. This all happens entirely over I2C.  There is a risk that if power should fail during reflashing you may have to rescue the slave with a programmer such as a USBTiny, so keep this in mind in your mission-critical applications.
+state from the sketch to the bootloader so that the master can then send the new flash image.  When that is finished, the slave will boot back into the sketch if it can be run. This all happens entirely over I2C.  There is a risk that if power should fail during reflashing you may have to rescue the slave with a programmer such as a USBTiny, so keep this in mind in your mission-critical applications.  Obviously, any new firmware flashed this way will have to be twiboot-aware for the slave to be able to switch back into the bootloader at will for further updates.
 
 The files slaveupdate.cpp and slaveupdate.h contain a library of functions to run on an ESP8266 master, which will allow that master to stream a chunked hex image file from a web server to the slave while this bootloader is running on it.  
 
