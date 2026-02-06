@@ -11,7 +11,9 @@ This version only requires an I2C connection to a master to reflash the sketch a
 This code uses two bytes beginning at EEPROM address 510 (decimal) to pass a "stay in bootloader"
 state from the sketch to the bootloader so that the master can then send the new flash image.  When that is finished, the slave will boot back into the sketch if it can be run. This all happens entirely over I2C.  There is a risk that if power should fail during reflashing you may have to rescue the slave with a programmer such as a USBTiny, so keep this in mind in your mission-critical applications.
 
-The files slaveupdate.cpp and slaveupdate.h contain a library of functions to run on an ESP8266 master, which will allow that master to stream a hex image file from a web server to the slave while this bootloader is running on it.  The original twiboot didn't have built-in support for chunked data (that is, data in packets significantly smaller than the 128 byte page size of an Atmega328p).  Such chunking is essential if one is using most Arduino I2C libraries, which impose a 32 byte limit on I2C transfers.
+The files slaveupdate.cpp and slaveupdate.h contain a library of functions to run on an ESP8266 master, which will allow that master to stream a hex image file from a web server to the slave while this bootloader is running on it.  
+
+The original twiboot didn't have built-in support for chunked data (that is, data in packets significantly smaller than the 128 byte page size of an Atmega328p).  Such chunking is essential if one is using most Arduino I2C libraries, which impose a 32 byte limit on I2C transfers.  Chunking is configurable from the master end, and, after much trial and error, I settled on 16 byte chunks.
 
 For now this version is bulky and requires at least a 2k bootloader partition in the flash. If you set UART_DEBUG to 1, you will require a 4k boot partition.
 
