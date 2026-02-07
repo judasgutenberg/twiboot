@@ -218,7 +218,7 @@ const static uint8_t chipinfo[8] = {
 
 //static uint8_t boot_timeout = TIMER_MSEC2IRQCNT(TIMEOUT_MS);
 //static volatile uint16_t boot_timeout = 1;
-static volatile uint16_t boot_timeout = 10000;
+static volatile uint16_t boot_timeout = 1000;
 
 static uint8_t cmd = CMD_WAIT;
 
@@ -244,6 +244,7 @@ static uint16_t page_dirty_bytes = 0; // NEW: number of bytes buffered in curren
  
 static uint16_t current_page_word;
 volatile uint8_t flash_write_pending = 0;
+volatile uint8_t bootloadLoopCount = 0;
 
 /////////////////////////////////////////////////////////////
 //debug bitbanger functions. the plan was to use this when serial was unreliable
@@ -352,7 +353,7 @@ void uart_put_bytes_hex(const uint8_t *data, size_t len)
 
 void uart_dump_buf(void)
 {
-    for (uint16_t i = 0; i < 128; i += 16) {
+    for (uint16_t i = 0; i < sizeof(buf); i += 16) {
 
         // print offset (hex)
         char off[9];
@@ -363,7 +364,7 @@ void uart_dump_buf(void)
         // print up to 16 bytes
         for (uint8_t j = 0; j < 16; j++) {
             uint16_t idx = i + j;
-            if (idx >= 128) {
+            if (idx >= sizeof(buf)) {
               break;
             }
             uint8_t b = buf[idx];
@@ -423,6 +424,7 @@ static void twi_handler(void);
  * ************************************************************************* */
 static void write_flash_page(void)
 {
+    bootloadLoopCount = 0;
     if (!page_dirty) return;  // nothing to write
 
     // Save SREG and disable interrupts
@@ -1244,7 +1246,7 @@ int main(void)
         eeprom_write_word(BOOT_MAGIC_ADDR, 0);
 
         // small delay to let I2C bus stabilize
-        _delay_ms(5000);
+        _delay_ms(200);
     }
 
     // --- LED init ---
@@ -1291,15 +1293,19 @@ int main(void)
     while (stay_in_bootloader && (cmd != CMD_BOOT_APPLICATION || page_dirty || flash_write_pending)) {
         static uint16_t heartbeat = 0;
         heartbeat++;
+        
         //TWCR = (1 << TWEN) | (1 << TWIE) | (1 << TWEA); //new code gus installed
         #if defined (TWCR)
         TWCR = (1<<TWEN) | (1<<TWEA); // NO TWIE
         #endif
  
         if (heartbeat == 0) {
-            //uart_puts("BOOTLOADER LOOPING...\n");
+            bootloadLoopCount++;
+            #if UART_DEBUG
+            uart_puts("BOOTLOADER LOOPING...\n");
             //uart_putint(cmd);
             //uart_puts("\n");
+            #endif
         }
         
         if (flash_write_pending) {
@@ -1332,6 +1338,14 @@ int main(void)
               TIFR0 = (1<<TOV0);
             }
         #endif
+        if(bootloadLoopCount > 20) {
+          #if UART_DEBUG
+            uart_puts("Too many loops..\n");
+            //uart_putint(cmd);
+            //uart_puts("\n");
+          #endif
+          stay_in_bootloader = false;
+        }
     }
 
     //the why we left section
